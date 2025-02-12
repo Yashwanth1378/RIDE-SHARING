@@ -88,3 +88,66 @@ Registers a new user account. The endpoint requires a `fullname` object, an `ema
   "error": "Validation failed: firstname and lastname must be at least 3 characters, valid email required, and password must be at least 6 characters."
 }
 ```
+
+## User Login Endpoint
+
+**Endpoint:** `/user/login`  
+**Method:** `POST`
+
+### Description
+Logs in an existing user. Requires a valid email and password. Returns a JWT token and user details upon successful authentication.
+
+### Request Body
+```json
+{
+  "email": "string (valid email)",
+  "password": "string (min 6 characters)"
+}
+```
+
+### Status Codes
+- **200 OK:** Login successful.
+- **400 Bad Request:** Validation errors.
+- **401 Unauthorized:** Incorrect email or password.
+
+### Example: Successful Login
+
+**Request Input:**
+```json
+{
+  "email": "jane.doe@example.com",
+  "password": "securepass"
+}
+```
+
+**Response:**
+```json
+{
+  "token": "new-jwt-token",
+  "user": {
+    "fullname": {
+      "firstname": "Jane",
+      "lastname": "Doe"
+    },
+    "email": "jane.doe@example.com"
+    // ...other user properties...
+  }
+}
+```
+
+### Example: Failed Login
+
+**Request Input:**
+```json
+{
+  "email": "jane.doe@example.com",
+  "password": "wrongpass"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Invalid email or password"
+}
+```
