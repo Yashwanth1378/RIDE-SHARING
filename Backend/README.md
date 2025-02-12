@@ -200,3 +200,60 @@ Requires a valid JWT token provided in the authorization header or cookie.
   "message": "Successfully logged out."
 }
 ```
+
+## Captain Registration Endpoint
+
+**Endpoint:** `/captain/register`  
+**Method:** `POST`
+
+### Description
+Registers a new captain account with vehicle details.
+
+### Request Body
+```json
+{
+  "fullname": {
+    "firstname": "John",
+    "lastname": "Doe"
+  },
+  "email": "john.doe@example.com",
+  "password": "securepass",
+  "vehicle": {
+    "color": "Red",
+    "plate": "XYZ123",
+    "capacity": 4,
+    "vehicleType": "car"
+  }
+}
+```
+
+### Successful Response
+```json
+{
+  "token": "jwt-token-string",
+  "captain": {
+    "fullname": {
+      "firstname": "John",
+      "lastname": "Doe"
+    },
+    "email": "john.doe@example.com",
+    "status": "inactive",
+    "vehicle": {
+      "color": "Red",
+      "plate": "XYZ123",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+    // ...other captain properties...
+  }
+}
+```
+
+### Error Response
+```json
+{
+  "errors": [
+    { "msg": "Invalid email", "param": "email", "location": "body" }
+  ]
+}
+```
