@@ -151,3 +151,52 @@ Logs in an existing user. Requires a valid email and password. Returns a JWT tok
   "message": "Invalid email or password"
 }
 ```
+
+## User Profile Endpoint
+
+**Endpoint:** `/user/profile`  
+**Method:** `GET`
+
+### Description
+Retrieves the profile of the authenticated user. Requires a valid JWT token (provided via header or cookies).
+
+### Authentication
+- JWT token must be provided.  
+
+### Response
+- **200 OK:** Returns user profile details.
+- **401 Unauthorized:** Missing or invalid token.
+
+### Example Response
+```json
+{
+  "fullname": {
+    "firstname": "Jane",
+    "lastname": "Doe"
+  },
+  "email": "jane.doe@example.com"
+  // ...other user properties...
+}
+```
+
+## User Logout Endpoint
+
+**Endpoint:** `/user/logout`  
+**Method:** `GET`
+
+### Description
+Logs out the current user by blacklisting the token provided via the cookie or header.
+
+### Authentication
+Requires a valid JWT token provided in the authorization header or cookie.
+
+### Response
+- **200 OK:** Returns a confirmation message for successful logout.
+- **401 Unauthorized:** Missing or invalid token.
+
+### Example Response
+```json
+{
+  "message": "Successfully logged out."
+}
+```
