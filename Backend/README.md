@@ -209,6 +209,10 @@ Requires a valid JWT token provided in the authorization header or cookie.
 ### Description
 Registers a new captain account with vehicle details.
 
+### Status Codes
+- **201 Created:** Captain created successfully.
+- **400 Bad Request:** Validation errors in the input.
+
 ### Request Body
 ```json
 {
@@ -255,5 +259,80 @@ Registers a new captain account with vehicle details.
   "errors": [
     { "msg": "Invalid email", "param": "email", "location": "body" }
   ]
+}
+```
+
+## Captain Login Endpoint
+
+**Endpoint:** `/captain/login`  
+**Method:** `POST`
+
+### Description
+Authenticates a captain and returns a JWT token along with captain details.
+
+### Request Body
+```json
+{
+  "email": "string (valid email)",
+  "password": "string (min 6 characters)"
+}
+```
+
+### Status Codes
+- **200 OK:** Login successful.
+- **400 Bad Request:** Validation errors.
+- **401 Unauthorized:** Incorrect email or password.
+
+### Example Response
+```json
+{
+  "token": "jwt-token-string",
+  "captain": {
+    "fullname": { "firstname": "John", "lastname": "Doe" },
+    "email": "john.doe@example.com"
+    // ...other captain properties...
+  }
+}
+```
+
+## Captain Profile Endpoint
+
+**Endpoint:** `/captain/profile`  
+**Method:** `GET`
+
+### Description
+Retrieves the profile of the authenticated captain. Requires a valid JWT token.
+
+### Status Codes
+- **200 OK:** Returns captain profile details.
+- **401 Unauthorized:** Missing or invalid token.
+
+### Example Response
+```json
+{
+  "captain": {
+    "fullname": { "firstname": "John", "lastname": "Doe" },
+    "email": "john.doe@example.com"
+    // ...other captain properties...
+  }
+}
+```
+
+## Captain Logout Endpoint
+
+**Endpoint:** `/captain/logout`  
+**Method:** `GET`
+
+### Description
+Logs out the captain by blacklisting the JWT token.
+
+### Status Codes
+- **200 OK:** Logout successful.
+- **401 Unauthorized:** Missing or invalid token.
+
+### Example Response
+```json
+{
+  "message": "Logout successfully"
 }
 ```
