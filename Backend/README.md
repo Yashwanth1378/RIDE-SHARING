@@ -336,3 +336,49 @@ Logs out the captain by blacklisting the JWT token.
   "message": "Logout successfully"
 }
 ```
+## Get Fare Endpoint
+
+**Endpoint:** `/rides/get-fare`  
+**Method:** `GET`
+
+### Description
+Calculates and returns the estimated fare for a ride based on the pickup and destination addresses. Requires user authentication.
+
+### Query Parameters
+- `pickup`: `string` (required) — The pickup address (min 3 characters).
+- `destination`: `string` (required) — The destination address (min 3 characters).
+
+### Authentication
+Requires a valid JWT token provided in the `Authorization` header.
+
+### Status Codes
+- **200 OK:** Returns the fare estimation for each vehicle type.
+- **400 Bad Request:** Validation errors in the input.
+- **500 Internal Server Error:** Server error during fare calculation.
+
+### Example Request
+
+```
+GET /rides/get-fare?pickup=MG%20Road%20Bangalore&destination=Indiranagar%20Bangalore
+Authorization: Bearer <jwt-token>
+```
+
+### Example Response
+
+```json
+{
+  "auto": 120,
+  "car": 180,
+  "motorcycle": 90
+}
+```
+
+### Error Response
+
+```json
+{
+  "errors": [
+    { "msg": "Invalid pickup address", "param": "pickup", "location": "query" }
+  ]
+}
+```
