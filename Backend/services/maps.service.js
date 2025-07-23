@@ -1,160 +1,77 @@
-const rideModel = require('../models/ride.model');
-const mapService = require('./maps.service');
-const bcrypt = require('bcrypt');
-const crypto = require('crypto');
+const axios = require('axios');
 
-async function getFare(pickup, destination) {
+module.exports.getAddressCoordinate = async (address) => {
+    const apiKey = process.env.GOOGLE_MAPS_API;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
 
-    if (!pickup || !destination) {
-        throw new Error('Pickup and destination are required');
+    try {
+        const response = await axios.get(url);
+        if (response.data.status === 'OK') {
+            const location = response.data.results[ 0 ].geometry.location;
+            return {
+                ltd: location.lat,
+                lng: location.lng
+            };
+        } else {
+            throw new Error('Unable to fetch coordinates');
+        }
+    } catch (error) {
+        console.error(error);
+        throw error;
     }
-
-    const distanceTime = await mapService.getDistanceTime(pickup, destination);
-
-    const baseFare = {
-        auto: 30,
-        car: 50,
-        moto: 20
-    };
-
-    const perKmRate = {
-        auto: 10,
-        car: 15,
-        moto: 8
-    };
-
-    const perMinuteRate = {
-        auto: 2,
-        car: 3,
-        moto: 1.5
-    };
-
-
-
-    const fare = {
-        auto: Math.round(baseFare.auto + ((distanceTime.distance.value / 1000) * perKmRate.auto) + ((distanceTime.duration.value / 60) * perMinuteRate.auto)),
-        car: Math.round(baseFare.car + ((distanceTime.distance.value / 1000) * perKmRate.car) + ((distanceTime.duration.value / 60) * perMinuteRate.car)),
-        moto: Math.round(baseFare.moto + ((distanceTime.distance.value / 1000) * perKmRate.moto) + ((distanceTime.duration.value / 60) * perMinuteRate.moto))
-    };
-
-    return fare;
-
-
 }
 
-module.exports.getFare = getFare;
-
-
-function getOtp(num) {
-    function generateOtp(num) {
-        const otp = crypto.randomInt(Math.pow(10, num - 1), Math.pow(10, num)).toString();
-        return otp;
+module.exports.getDistanceTime = async (origin, destination) => {
+    if (!origin || !destination) {
+        throw new Error('Origin and destination are required');
     }
-    return generateOtp(num);
+
+    const apiKey = process.env.GOOGLE_MAPS_API;
+
+    console.log('Calling Google Maps API for distance and time calculation...');
+    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&key=${apiKey}`;
+    
+    try {
+        
+        const response = await axios.get(url);
+        if (response.data.status === 'OK') {
+
+            if (response.data.rows[ 0 ].elements[ 0 ].status === 'ZERO_RESULTS') {
+                throw new Error('No routes found');
+            }
+
+            return response.data.rows[ 0 ].elements[ 0 ];
+        } else {
+            throw new Error('Unable to fetch distance and time');
+        }
+
+    } catch (err) {
+        console.error(err);
+        throw err;
+    }
 }
 
+module.exports.getAutoCompleteSuggestions = async (input) => {
+    if(!input){
+        throw new Error('query is required');
+    }
+    const apiKey = process.env.GOOGLE_MAPS_API;
+    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${apiKey}`;
 
-module.exports.createRide = async ({
-    user, pickup, destination, vehicleType
-}) => {
-    if (!user || !pickup || !destination || !vehicleType) {
-        throw new Error('All fields are required');
+
+    try {
+        const response = await axios.get(url);
+        if (response.data.status === 'OK') {
+            return response.data.predictions;
+        }
+        else {
+            throw new Error('Unable to fetch suggestions');
+        }
+    }
+    catch (error) {
+        console.error(err);
+        throw err;
     }
 
-    const fare = await getFare(pickup, destination);
 
-
-
-    const ride = rideModel.create({
-        user,
-        pickup,
-        destination,
-        otp: getOtp(6),
-        fare: fare[ vehicleType ]
-    })
-
-    return ride;
-}
-
-module.exports.confirmRide = async ({
-    rideId, captain
-}) => {
-    if (!rideId) {
-        throw new Error('Ride id is required');
-    }
-
-    await rideModel.findOneAndUpdate({
-        _id: rideId
-    }, {
-        status: 'accepted',
-        captain: captain._id
-    })
-
-    const ride = await rideModel.findOne({
-        _id: rideId
-    }).populate('user').populate('captain').select('+otp');
-
-    if (!ride) {
-        throw new Error('Ride not found');
-    }
-
-    return ride;
-
-}
-
-module.exports.startRide = async ({ rideId, otp, captain }) => {
-    if (!rideId || !otp) {
-        throw new Error('Ride id and OTP are required');
-    }
-
-    const ride = await rideModel.findOne({
-        _id: rideId
-    }).populate('user').populate('captain').select('+otp');
-
-    if (!ride) {
-        throw new Error('Ride not found');
-    }
-
-    if (ride.status !== 'accepted') {
-        throw new Error('Ride not accepted');
-    }
-
-    if (ride.otp !== otp) {
-        throw new Error('Invalid OTP');
-    }
-
-    await rideModel.findOneAndUpdate({
-        _id: rideId
-    }, {
-        status: 'ongoing'
-    })
-
-    return ride;
-}
-
-module.exports.endRide = async ({ rideId, captain }) => {
-    if (!rideId) {
-        throw new Error('Ride id is required');
-    }
-
-    const ride = await rideModel.findOne({
-        _id: rideId,
-        captain: captain._id
-    }).populate('user').populate('captain').select('+otp');
-
-    if (!ride) {
-        throw new Error('Ride not found');
-    }
-
-    if (ride.status !== 'ongoing') {
-        throw new Error('Ride not ongoing');
-    }
-
-    await rideModel.findOneAndUpdate({
-        _id: rideId
-    }, {
-        status: 'completed'
-    })
-
-    return ride;
 }
